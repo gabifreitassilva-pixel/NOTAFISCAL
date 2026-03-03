@@ -3,254 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shopee Post Manager Mobile</title>
-    
+    <title>Shopee Post Manager</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ee4d2d">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
     <style>
-        :root {
-            --primary: #ee4d2d;
-            --secondary: #28a745;
-            --bg: #f0f2f5;
-            --card-bg: #ffffff;
-            --text: #333;
-        }
-        
-        * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 10px; color: var(--text); }
-        
-        .container { max-width: 100%; margin: auto; }
-        
-        header { text-align: center; margin-bottom: 15px; padding: 10px; }
-        h1 { color: var(--primary); margin: 0; font-size: 1.5rem; }
-        p { font-size: 0.9rem; color: #666; margin: 5px 0 0; }
-
-        .upload-area { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; border: 2px dashed #ccc; }
-        .btn-upload { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: inline-block; }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background-color: #f0f2f5; margin: 0; padding: 10px; color: #333; }
+        .header { text-align: center; padding: 15px; }
+        .header h1 { color: #ee4d2d; font-size: 22px; margin: 0; }
+        .upload-section { background: #fff; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 2px dashed #ccc; }
+        .btn-input { background: #ee4d2d; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-block; }
         input[type="file"] { display: none; }
-
-        /* Tabela Mobile Responsiva */
-        table { width: 100%; border-collapse: collapse; }
-        thead { display: none; } /* Esconde cabeçalho no mobile */
-
-        tbody tr { 
-            display: block; 
-            background: var(--card-bg); 
-            margin-bottom: 15px; 
-            border-radius: 12px; 
-            padding: 15px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            position: relative;
-            border-left: 6px solid var(--primary);
-        }
-
-        td { display: block; width: 100%; padding: 5px 0; border: none; }
-
-        /* Estilo para campos específicos no modo Card */
-        .col-check { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-        .col-check::before { content: "Status Postado:"; font-weight: bold; color: #555; }
-        
-        .col-date { font-size: 0.8rem; color: #888; text-align: right; }
-        
-        .col-desc::before { content: "Legenda:"; display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #555; }
-        .col-tags::before { content: "Hashtags:"; display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #555; }
-
-        textarea { 
-            width: 100%; 
-            height: 120px; 
-            padding: 10px; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 0.95rem; 
-            background: #fafafa; 
-            resize: none;
-            -webkit-appearance: none;
-        }
-
-        .btn-copy { 
-            background: #f8f9fa; 
-            color: #333; 
-            border: 1px solid #ddd; 
-            padding: 12px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            width: 100%; 
-            margin-top: 5px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-copy:active { background: #e2e6ea; }
-        .btn-copy.success { background: var(--secondary); color: white; border-color: var(--secondary); }
-
-        .btn-photos { 
-            background: #007bff; 
-            color: white; 
-            text-decoration: none; 
-            padding: 14px; 
-            border-radius: 8px; 
-            display: block; 
-            text-align: center; 
-            font-weight: bold; 
-            font-size: 1rem;
-            margin-top: 10px;
-            box-shadow: 0 4px 0 #0056b3;
-        }
-        .btn-photos:active { transform: translateY(2px); box-shadow: none; }
-
-        .checkbox-custom { width: 28px; height: 28px; cursor: pointer; accent-color: var(--secondary); }
-
-        /* Estilo Postado */
-        .posted-row { background: #f0f0f0 !important; border-left-color: #888 !important; opacity: 0.8; }
-        .posted-row textarea { background: #eee; color: #888; }
-        
-        .empty-msg { text-align: center; padding: 40px; color: #999; }
-
-        /* Ajustes para telas maiores (Desktop) */
-        @media (min-width: 768px) {
-            thead { display: table-header-group; }
-            tbody tr { display: table-row; background: white; border-radius: 0; box-shadow: none; border-left: none; }
-            td { display: table-cell; padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; width: auto; }
-            .col-check::before, .col-desc::before, .col-tags::before { content: ""; }
-            .col-check { border-bottom: none; margin-bottom: 0; display: table-cell; }
-            textarea { height: 100px; }
-            .btn-copy { width: auto; padding: 8px 12px; display: block; width: 100%; }
-        }
+        .product-card { background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 8px solid #ee4d2d; display: flex; flex-direction: column; gap: 10px; }
+        .posted { border-left-color: #bbb; opacity: 0.7; background: #f8f9fa; }
+        .card-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .date-label { font-size: 11px; color: #888; font-weight: bold; }
+        label { font-size: 12px; font-weight: bold; color: #666; margin-bottom: -5px; }
+        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; background: #fafafa; resize: none; outline: none; }
+        .btn-copy { background: #f8f9fa; border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 5px; width: 100%; }
+        .success { background: #28a745 !important; color: white !important; border-color: #28a745 !important; }
+        .btn-photos { background: #007bff; color: white; text-decoration: none; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 0 #0056b3; }
+        .check-container { display: flex; align-items: center; gap: 8px; font-weight: bold; color: #ee4d2d; }
+        .checkbox-large { width: 25px; height: 25px; accent-color: #28a745; }
+        .empty { text-align: center; color: #999; margin-top: 50px; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <header>
-        <h1>Shopee Manager Mobile</h1>
-        <p>Ajustado para celular 📱</p>
-    </header>
-
-    <div class="upload-area">
-        <label for="csvInput" class="btn-upload">📂 IMPORTAR PLANILHA</label>
-        <input type="file" id="csvInput" accept=".csv">
+    <div class="header"><h1>Shopee Post App</h1></div>
+    <div class="upload-section">
+        <label for="csv" class="btn-input">📂 IMPORTAR PLANILHA CSV</label>
+        <input type="file" id="csv" accept=".csv">
     </div>
-
-    <div id="mainContent">
-        <table id="postTable">
-            <thead>
-                <tr>
-                    <th style="width:70px">Status</th>
-                    <th>Data</th>
-                    <th>Legenda</th>
-                    <th>Hashtags</th>
-                    <th style="width:150px">Fotos</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-        <div id="emptyState" class="empty-msg">Nenhum arquivo carregado.</div>
-    </div>
-</div>
-
-<script>
-    let products = [];
-
-    document.getElementById('csvInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                products = results.data.map((item, index) => ({
-                    ...item,
-                    internalId: index,
-                    posted: false,
-                    postDate: '',
-                    generatedDesc: `🔥 PROMOÇÃO 🔥\n\n✨ ${item['Item Name']}\n\n💰 Por apenas R$ ${item['Price']}\n\n🔗 Link: ${item['Offer Link'] || item['Product Link']}`,
-                    generatedTags: generateTags(item['Item Name'])
+    <div id="app-list"><div class="empty">Nenhum produto carregado.</div></div>
+    <script>
+        let db = [];
+        document.getElementById('csv').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(results) {
+                db = results.data.map((item, index) => ({
+                    ...item, uid: index, posted: false, postDate: '',
+                    desc: `🔥 PROMOÇÃO 🔥\n\n✨ ${item['Item Name']}\n\n💰 Por apenas R$ ${item['Price']}\n\n🔗 Link: ${item['Offer Link'] || item['Product Link']}`,
+                    tags: generateTags(item['Item Name'])
                 }));
-                renderTable();
-            }
+                render();
+            }});
         });
-    });
-
-    function generateTags(name) {
-        if(!name) return "#shopee #ofertas";
-        const tags = name.toLowerCase().replace(/[^a-zA-Záàâãéèêíïóôõöúç ]/g, "").split(' ')
-                    .filter(w => w.length > 3).slice(0, 5).map(w => "#" + w).join(" ");
-        return tags + " #shopee #ofertas #compras";
-    }
-
-    function togglePosted(id) {
-        const idx = products.findIndex(p => p.internalId === id);
-        if (idx > -1) {
-            products[idx].posted = !products[idx].posted;
-            products[idx].postDate = products[idx].posted ? new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
-            renderTable();
+        function generateTags(n) { return n ? n.toLowerCase().replace(/[^a-z ]/g, "").split(' ').filter(w => w.length > 3).slice(0, 5).map(w => "#" + w).join(" ") + " #shopee #ofertas" : "#shopee"; }
+        function toggle(id) {
+            const i = db.findIndex(p => p.uid === id);
+            db[i].posted = !db[i].posted;
+            db[i].postDate = db[i].posted ? new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
+            render();
         }
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        const emptyState = document.getElementById('emptyState');
-        tbody.innerHTML = '';
-        
-        if (products.length === 0) {
-            emptyState.style.display = 'block';
-            return;
+        function render() {
+            const list = document.getElementById('app-list');
+            list.innerHTML = '';
+            const sorted = [...db].sort((a, b) => a.posted - b.posted);
+            sorted.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `product-card ${item.posted ? 'posted' : ''}`;
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="check-container"><input type="checkbox" class="checkbox-large" ${item.posted ? 'checked' : ''} onchange="toggle(${item.uid})"> ${item.posted ? 'POSTADO' : 'PENDENTE'}</div>
+                        <span class="date-label">${item.postDate}</span>
+                    </div>
+                    <label>Legenda:</label><textarea id="d-${item.uid}">${item.desc}</textarea>
+                    <button class="btn-copy" onclick="copy('d-${item.uid}', this)">📋 Copiar Legenda</button>
+                    <label>Hashtags:</label><textarea id="t-${item.uid}" style="height:60px">${item.tags}</textarea>
+                    <button class="btn-copy" onclick="copy('t-${item.uid}', this)">📋 Copiar Hashtags</button>
+                    <a href="${item['Product Link']}" target="_blank" class="btn-photos">🖼️ PEGAR FOTOS</a>`;
+                list.appendChild(card);
+            });
         }
-        emptyState.style.display = 'none';
-
-        // Ordenar: Pendentes primeiro
-        const sorted = [...products].sort((a, b) => a.posted - b.posted);
-
-        sorted.forEach((item) => {
-            const tr = document.createElement('tr');
-            if (item.posted) tr.className = 'posted-row';
-            
-            tr.innerHTML = `
-                <td class="col-check">
-                    <input type="checkbox" class="checkbox-custom" ${item.posted ? 'checked' : ''} onchange="togglePosted(${item.internalId})">
-                    <span class="col-date">${item.postDate}</span>
-                </td>
-                <td class="col-desc">
-                    <textarea id="desc-${item.internalId}">${item.generatedDesc.replace(/\\n/g, '\n')}</textarea>
-                    <button class="btn-copy" onclick="copyText('desc-${item.internalId}', this)">📋 Copiar Legenda</button>
-                </td>
-                <td class="col-tags">
-                    <textarea id="tags-${item.internalId}" style="height: 80px;">${item.generatedTags}</textarea>
-                    <button class="btn-copy" onclick="copyText('tags-${item.internalId}', this)">📋 Copiar Hashtags</button>
-                </td>
-                <td class="col-actions">
-                    <a href="${item['Product Link']}" target="_blank" class="btn-photos">🖼️ ABRIR PARA PEGAR FOTOS</a>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function copyText(id, btn) {
-        const area = document.getElementById(id);
-        area.select();
-        area.setSelectionRange(0, 99999);
-        document.execCommand("copy");
-        
-        const oldText = btn.innerHTML;
-        btn.innerHTML = "✅ COPIADO!";
-        btn.classList.add('success');
-        setTimeout(() => {
-            btn.innerHTML = oldText;
-            btn.classList.remove('success');
-        }, 1500);
-    }
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
-</script>
-
+        function copy(id, btn) {
+            const area = document.getElementById(id); area.select(); document.execCommand("copy");
+            const old = btn.innerHTML; btn.innerHTML = "✅ COPIADO!"; btn.classList.add('success');
+            setTimeout(() => { btn.innerHTML = old; btn.classList.remove('success'); }, 1500);
+        }
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+    </script>
 </body>
 </html>
