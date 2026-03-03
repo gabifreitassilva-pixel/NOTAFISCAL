@@ -3,125 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shopee Post App Pro</title>
+    <title>Shopee Post Manager Pro</title>
+    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ee4d2d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
     <style>
+        :root {
+            --shopee-orange: #ee4d2d;
+            --success: #28a745;
+            --bg: #f8f9fa;
+        }
         * { box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
-        body { background: #f0f2f5; margin: 0; padding: 10px; color: #333; padding-bottom: 30px; }
-        .header { text-align: center; padding: 10px 0; }
-        .header h1 { color: #ee4d2d; font-size: 20px; margin: 0; text-transform: uppercase; }
-        .upload-card { background: #fff; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; border: 2px dashed #ee4d2d; }
-        .btn-upload { background: #ee4d2d; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-block; font-size: 14px; }
+        body { background: var(--bg); margin: 0; padding: 10px; color: #333; padding-bottom: 40px; }
+        
+        /* Cabeçalho e Importação */
+        header { text-align: center; padding: 15px 0; }
+        header h1 { color: var(--shopee-orange); font-size: 22px; margin: 0; }
+        
+        .upload-section {
+            background: #fff; padding: 20px; border-radius: 15px;
+            text-align: center; margin-bottom: 15px; border: 2px dashed var(--shopee-orange);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .btn-upload {
+            background: var(--shopee-orange); color: white; padding: 12px 25px;
+            border-radius: 10px; font-weight: bold; cursor: pointer; display: inline-block;
+            box-shadow: 0 4px 0 #b3361b; transition: 0.2s;
+        }
+        .btn-upload:active { transform: translateY(3px); box-shadow: none; }
         input[type="file"] { display: none; }
-        .stats-container { display: flex; justify-content: space-around; background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .stat-item { text-align: center; }
-        .stat-value { display: block; font-size: 18px; font-weight: bold; color: #ee4d2d; }
-        .stat-label { font-size: 10px; color: #888; text-transform: uppercase; }
-        .tabs { display: flex; background: #ddd; border-radius: 10px; padding: 4px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; background: transparent; color: #666; }
-        .tab-btn.active { background: #fff; color: #ee4d2d; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .product-card { background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); border-left: 8px solid #ee4d2d; }
-        .posted-style { border-left-color: #28a745; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .status-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; }
-        .post-date { font-size: 10px; color: #999; }
-        textarea { width: 100%; height: 110px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; background: #fafafa; resize: none; outline: none; }
-        .char-info { text-align: right; font-size: 11px; color: #888; margin-top: 4px; }
+
+        /* Painel de Contagem */
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: #fff; padding: 12px 5px; border-radius: 12px;
+            text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .stat-value { display: block; font-size: 20px; font-weight: bold; color: var(--shopee-orange); }
+        .stat-label { font-size: 10px; color: #888; text-transform: uppercase; font-weight: bold; }
+
+        /* Sistema de Abas */
+        .tab-bar {
+            display: flex; background: #e0e0e0; border-radius: 12px;
+            padding: 5px; margin-bottom: 15px; gap: 5px;
+        }
+        .tab-btn {
+            flex: 1; border: none; padding: 12px; border-radius: 10px;
+            font-weight: bold; font-size: 14px; cursor: pointer;
+            background: transparent; color: #666; transition: 0.3s;
+        }
+        .tab-btn.active { background: #fff; color: var(--shopee-orange); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* Cartão de Produto */
+        .product-card {
+            background: #fff; border-radius: 15px; padding: 15px;
+            margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            border-left: 8px solid var(--shopee-orange);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .posted-card { border-left-color: var(--success); opacity: 0.8; background: #fdfdfd; }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .status-check { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; }
+        .status-date { font-size: 11px; color: #999; }
+
+        textarea {
+            width: 100%; height: 110px; padding: 12px; border: 1px solid #ddd;
+            border-radius: 12px; font-size: 14px; background: #fafafa;
+            resize: none; outline: none; line-height: 1.4; color: #222;
+        }
+
+        .char-count { text-align: right; font-size: 11px; color: #888; margin-top: -5px; }
         .limit-red { color: #d9534f; font-weight: bold; }
-        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .btn-action { border: none; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-copy { background: #333; color: white; }
-        .btn-copy.success { background: #28a745; }
-        .btn-photos { background: #007bff; color: white; text-decoration: none; }
-        .checkbox-custom { width: 24px; height: 24px; cursor: pointer; accent-color: #28a745; }
-        .clear-btn { background: none; border: none; color: #999; font-size: 11px; text-decoration: underline; margin-top: 10px; }
+
+        .btn-copy {
+            background: #333; color: white; border: none; padding: 14px;
+            border-radius: 10px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-copy.success { background: var(--success); }
+
+        .btn-photos {
+            background: #007bff; color: white; text-decoration: none;
+            padding: 14px; border-radius: 10px; text-align: center;
+            font-weight: bold; font-size: 15px; box-shadow: 0 4px 0 #0056b3;
+        }
+        
+        .checkbox-large { width: 25px; height: 25px; accent-color: var(--success); }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: #aaa; font-style: italic; }
+        .clear-btn { background: none; border: none; color: #999; font-size: 11px; text-decoration: underline; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="header"><h1>Shopee Post App</h1></div>
-    <div class="upload-card">
-        <label for="csvIn" class="btn-upload">📂 IMPORTAR PLANILHA (+ADICIONAR)</label>
-        <input type="file" id="csvIn" accept=".csv" multiple>
-        <br><button class="clear-btn" onclick="clearData()">Limpar tudo</button>
-    </div>
-    <div class="stats-container">
-        <div class="stat-item"><span class="stat-value" id="count-total">0</span><span class="stat-label">Total</span></div>
-        <div class="stat-item"><span class="stat-value" id="count-pending">0</span><span class="stat-label">Faltam</span></div>
-        <div class="stat-item"><span class="stat-value" id="count-posted" style="color:#28a745">0</span><span class="stat-label">Postados</span></div>
-    </div>
-    <div class="tabs">
-        <button id="tab-pending" class="tab-btn active" onclick="switchTab('pending')">PENDENTES</button>
-        <button id="tab-posted" class="tab-btn" onclick="switchTab('posted')">POSTADOS</button>
-    </div>
-    <div id="list-container"></div>
 
-    <script>
-        let products = JSON.parse(localStorage.getItem('shopee_db')) || [];
-        let currentTab = 'pending';
-        window.onload = () => render();
+<header>
+    <h1>Shopee Manager Pro</h1>
+</header>
 
-        document.getElementById('csvIn').addEventListener('change', function(e) {
-            Array.from(e.target.files).forEach(file => {
-                Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(r) {
-                    const newItems = r.data.map(item => {
+<div class="upload-section">
+    <label for="csvInput" class="btn-upload">📂 IMPORTAR PLANILHAS</label>
+    <input type="file" id="csvInput" accept=".csv" multiple>
+    <br>
+    <button class="clear-btn" onclick="clearAll()">Apagar histórico completo</button>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-value" id="stat-total">0</span>
+        <span class="stat-label">Total</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value" id="stat-pending">0</span>
+        <span class="stat-label">Pendentes</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value" id="stat-posted" style="color:var(--success)">0</span>
+        <span class="stat-label">Postados</span>
+    </div>
+</div>
+
+<div class="tab-bar">
+    <button id="tab-pendentes" class="tab-btn active" onclick="setTab('pendentes')">FALTAM POSTAR</button>
+    <button id="tab-postados" class="tab-btn" onclick="setTab('postados')">JÁ POSTADOS</button>
+</div>
+
+<div id="product-list"></div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('shopee_v7_db')) || [];
+    let currentTab = 'pendentes';
+
+    // Iniciar App
+    window.onload = () => render();
+
+    // Processar Planilha
+    document.getElementById('csvInput').addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (!files.length) return;
+
+        Array.from(files).forEach(file => {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const newItems = results.data.map(item => {
                         const fullName = item['Item Name'] || "";
                         const link = item['Offer Link'] || item['Product Link'] || "";
                         
-                        // RESUMO: Pega as primeiras 6 palavras ou 60 caracteres
-                        let shortName = fullName.split(' ').slice(0, 6).join(' ');
-                        if(shortName.length > 60) shortN = shortName.substring(0, 60) + "...";
+                        // 1. RESUMO INTELIGENTE DO NOME (Reduzir para que as tags apareçam bem)
+                        // Remove termos comuns de propaganda e pega as primeiras 5-6 palavras
+                        let cleanedName = fullName.replace(/(Promoção|Oferta|Premium|Barato|Lançamento|Novo|Original|2024|2025|Importado)/gi, '').trim();
+                        let shortName = cleanedName.split(' ').slice(0, 5).join(' ');
+                        if (shortName.length > 55) shortName = shortName.substring(0, 52) + "...";
 
-                        // HASHTAGS: Pega as 4 palavras mais importantes
+                        // 2. HASHTAGS (4 palavras principais)
                         const tags = fullName.toLowerCase().replace(/[^a-z ]/g, "").split(' ')
                                      .filter(w => w.length > 3).slice(0, 4)
                                      .map(w => "#"+w).join(" ") + " #shopee #oferta";
 
-                        const postContent = `✨ ${shortName}\n\n🔗 ${link}\n\n${tags}`;
-                        
-                        return { uid: Date.now() + Math.random(), posted: false, date: '', postText: postContent, photoLink: item['Product Link'] };
+                        const postBody = `✨ ${shortName}\n\n🔗 ${link}\n\n${tags}`;
+
+                        return {
+                            id: Date.now() + Math.random(),
+                            posted: false,
+                            date: '',
+                            text: postBody,
+                            photoUrl: item['Product Link']
+                        };
                     });
-                    products = [...products, ...newItems]; save(); render();
-                }});
+                    
+                    db = [...db, ...newItems];
+                    save();
+                    render();
+                }
             });
-            this.value = '';
         });
+        this.value = '';
+    });
 
-        function switchTab(t) { currentTab = t; document.getElementById('tab-pending').classList.toggle('active', t==='pending'); document.getElementById('tab-posted').classList.toggle('active', t==='posted'); render(); }
-        
-        function togglePosted(uid) {
-            const i = products.findIndex(p => p.uid === uid);
-            products[i].posted = !products[i].posted;
-            products[i].date = products[i].posted ? new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
-            save(); render();
+    function setTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-pendentes').classList.toggle('active', tab === 'pendentes');
+        document.getElementById('tab-postados').classList.toggle('active', tab === 'postados');
+        render();
+    }
+
+    function togglePost(id) {
+        const i = db.findIndex(p => p.id === id);
+        db[i].posted = !db[i].posted;
+        db[i].date = db[i].posted ? new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
+        save();
+        render();
+    }
+
+    function render() {
+        const container = document.getElementById('product-list');
+        container.innerHTML = '';
+
+        // Estatísticas
+        const total = db.length;
+        const posted = db.filter(p => p.posted).length;
+        const pending = total - posted;
+
+        document.getElementById('stat-total').innerText = total;
+        document.getElementById('stat-posted').innerText = posted;
+        document.getElementById('stat-pending').innerText = pending;
+
+        // Filtragem por Aba
+        const filtered = db.filter(p => currentTab === 'postados' ? p.posted : !p.posted);
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="empty-state">Nenhum produto em "${currentTab.toUpperCase()}".</div>`;
+            return;
         }
 
-        function render() {
-            const list = document.getElementById('list-container'); list.innerHTML = '';
-            const posted = products.filter(p => p.posted).length;
-            document.getElementById('count-total').innerText = products.length;
-            document.getElementById('count-posted').innerText = posted;
-            document.getElementById('count-pending').innerText = products.length - posted;
-            const filtered = products.filter(p => currentTab === 'posted' ? p.posted : !p.posted);
-            if(currentTab === 'posted') filtered.reverse();
+        // Se for postados, mostrar os mais recentes primeiro
+        if (currentTab === 'postados') filtered.reverse();
+
+        filtered.forEach(item => {
+            const card = document.createElement('div');
+            card.className = `product-card ${item.posted ? 'posted-card' : ''}`;
             
-            filtered.forEach(item => {
-                const card = document.createElement('div');
-                card.className = `product-card ${item.posted ? 'posted-style' : ''}`;
-                card.innerHTML = `<div class="card-header"><div class="status-badge"><input type="checkbox" class="checkbox-custom" ${item.posted ? 'checked' : ''} onchange="togglePosted(${item.uid})"> ${item.posted ? 'OK' : 'PENDENTE'}</div><span class="post-date">${item.date}</span></div>
-                    <textarea id="a-${item.uid}" oninput="updateT(${item.uid}, this.value)">${item.postText}</textarea>
-                    <div class="char-info ${item.postText.length > 150 ? 'limit-red' : ''}">${item.postText.length}/150</div>
-                    <div class="btn-group"><button class="btn-action btn-copy" onclick="copyP('a-${item.uid}', this)">📋 COPIAR POST</button>
-                    <a href="${item.photoLink}" target="_blank" class="btn-action btn-photos">🖼️ PEGAR FOTOS</a></div>`;
-                list.appendChild(card);
-            });
-        }
-        function updateT(uid, v) { const i = products.findIndex(p => p.uid === uid); products[i].postText = v; save(); render(); }
-        function copyP(id, btn) { const a = document.getElementById(id); a.select(); document.execCommand("copy"); const old = btn.innerHTML; btn.innerHTML = "✅ COPIADO!"; btn.classList.add('success'); setTimeout(() => { btn.innerHTML = old; btn.classList.remove('success'); }, 1200); }
-        function save() { localStorage.setItem('shopee_db', JSON.stringify(products)); }
-        function clearData() { if(confirm("Apagar tudo?")) { products = []; save(); render(); } }
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
-    </script>
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="status-check">
+                        <input type="checkbox" class="checkbox-large" ${item.posted ? 'checked' : ''} onchange="togglePost(${item.id})">
+                        ${item.posted ? 'POSTADO' : 'PENDENTE'}
+                    </div>
+                    <span class="status-date">${item.date}</span>
+                </div>
+                <textarea id="txt-${item.id}" oninput="updateText(${item.id}, this.value)">${item.text}</textarea>
+                <div class="char-count ${item.text.length > 150 ? 'limit-red' : ''}">
+                    ${item.text.length}/150 caracteres
+                </div>
+                <button class="btn-copy" onclick="copyContent('txt-${item.id}', this)">📋 COPIAR TEXTO COMPLETO</button>
+                <a href="${item.photoUrl}" target="_blank" class="btn-photos">🖼️ ABRIR PARA PEGAR FOTOS</a>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function updateText(id, val) {
+        const i = db.findIndex(p => p.id === id);
+        db[i].text = val;
+        save();
+        render(); 
+    }
+
+    function copyContent(areaId, btn) {
+        const el = document.getElementById(areaId);
+        el.select();
+        document.execCommand("copy");
+        const original = btn.innerHTML;
+        btn.innerHTML = "✅ COPIADO!";
+        btn.classList.add('success');
+        setTimeout(() => { btn.innerHTML = original; btn.classList.remove('success'); }, 1500);
+    }
+
+    function save() { localStorage.setItem('shopee_v7_db', JSON.stringify(db)); }
+    function clearAll() { if(confirm("Deseja apagar todos os produtos da lista?")) { db = []; save(); render(); } }
+
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+</script>
+
 </body>
 </html>
