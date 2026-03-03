@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shopee-manager-v2';
+const CACHE_NAME = 'shopee-manager-v1';
 const ASSETS = [
   'gerenciador_shopee_v3.html',
   'manifest.json',
