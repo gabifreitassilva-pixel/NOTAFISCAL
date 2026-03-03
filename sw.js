@@ -1,5 +1,5 @@
-const CACHE_NAME = 'shopee-app-v1';
-const assets = [
+const CACHE_NAME = 'shopee-v6-cache';
+const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
@@ -8,7 +8,7 @@ const assets = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(assets))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
