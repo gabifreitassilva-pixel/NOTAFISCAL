@@ -3,276 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shopee Post Manager Pro</title>
-    
+    <title>Shopee Afiliado Pro V8</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ee4d2d">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
     <style>
-        :root {
-            --shopee-orange: #ee4d2d;
-            --success: #28a745;
-            --bg: #f8f9fa;
-        }
         * { box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
-        body { background: var(--bg); margin: 0; padding: 10px; color: #333; padding-bottom: 40px; }
+        body { background: #f0f2f5; margin: 0; padding: 10px; color: #333; padding-bottom: 50px; }
+        header { text-align: center; padding: 10px; }
+        header h1 { color: #ee4d2d; font-size: 22px; margin: 0; }
         
-        /* Cabeçalho e Importação */
-        header { text-align: center; padding: 15px 0; }
-        header h1 { color: var(--shopee-orange); font-size: 22px; margin: 0; }
-        
-        .upload-section {
-            background: #fff; padding: 20px; border-radius: 15px;
-            text-align: center; margin-bottom: 15px; border: 2px dashed var(--shopee-orange);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        .btn-upload {
-            background: var(--shopee-orange); color: white; padding: 12px 25px;
-            border-radius: 10px; font-weight: bold; cursor: pointer; display: inline-block;
-            box-shadow: 0 4px 0 #b3361b; transition: 0.2s;
-        }
-        .btn-upload:active { transform: translateY(3px); box-shadow: none; }
+        /* Dashboard de Contagem */
+        .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .stat-box { background: #fff; padding: 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-num { display: block; font-size: 20px; font-weight: bold; color: #ee4d2d; }
+        .stat-txt { font-size: 9px; color: #888; text-transform: uppercase; font-weight: bold; }
+
+        .upload-area { background: #fff; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; border: 2px dashed #ee4d2d; }
+        .btn-up { background: #ee4d2d; color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-block; }
         input[type="file"] { display: none; }
 
-        /* Painel de Contagem */
-        .stats-grid {
-            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
-            margin-bottom: 15px;
-        }
-        .stat-card {
-            background: #fff; padding: 12px 5px; border-radius: 12px;
-            text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .stat-value { display: block; font-size: 20px; font-weight: bold; color: var(--shopee-orange); }
-        .stat-label { font-size: 10px; color: #888; text-transform: uppercase; font-weight: bold; }
+        /* Abas */
+        .tabs { display: flex; background: #ddd; border-radius: 12px; padding: 4px; margin-bottom: 15px; gap: 4px; }
+        .tab { flex: 1; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer; color: #666; background: transparent; }
+        .tab.active { background: #fff; color: #ee4d2d; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* Sistema de Abas */
-        .tab-bar {
-            display: flex; background: #e0e0e0; border-radius: 12px;
-            padding: 5px; margin-bottom: 15px; gap: 5px;
-        }
-        .tab-btn {
-            flex: 1; border: none; padding: 12px; border-radius: 10px;
-            font-weight: bold; font-size: 14px; cursor: pointer;
-            background: transparent; color: #666; transition: 0.3s;
-        }
-        .tab-btn.active { background: #fff; color: var(--shopee-orange); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-
-        /* Cartão de Produto */
-        .product-card {
-            background: #fff; border-radius: 15px; padding: 15px;
-            margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-            border-left: 8px solid var(--shopee-orange);
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .posted-card { border-left-color: var(--success); opacity: 0.8; background: #fdfdfd; }
+        /* Cards */
+        .card { background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 8px solid #ee4d2d; }
+        .card-done { border-left-color: #28a745; opacity: 0.8; }
         
-        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .status-check { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; }
-        .status-date { font-size: 11px; color: #999; }
+        .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .check-area { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 13px; }
+        .date { font-size: 10px; color: #999; }
 
-        textarea {
-            width: 100%; height: 110px; padding: 12px; border: 1px solid #ddd;
-            border-radius: 12px; font-size: 14px; background: #fafafa;
-            resize: none; outline: none; line-height: 1.4; color: #222;
-        }
+        textarea { width: 100%; height: 115px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; background: #fafafa; resize: none; outline: none; }
+        .counter { text-align: right; font-size: 11px; color: #888; margin: 4px 0 10px; }
+        .red { color: #d9534f; font-weight: bold; }
 
-        .char-count { text-align: right; font-size: 11px; color: #888; margin-top: -5px; }
-        .limit-red { color: #d9534f; font-weight: bold; }
+        .btns { display: flex; flex-direction: column; gap: 8px; }
+        .btn { border: none; padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
+        .btn-cp { background: #333; color: #fff; }
+        .btn-cp.ok { background: #28a745; }
+        .btn-ph { background: #007bff; color: #fff; }
 
-        .btn-copy {
-            background: #333; color: white; border: none; padding: 14px;
-            border-radius: 10px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-copy.success { background: var(--success); }
-
-        .btn-photos {
-            background: #007bff; color: white; text-decoration: none;
-            padding: 14px; border-radius: 10px; text-align: center;
-            font-weight: bold; font-size: 15px; box-shadow: 0 4px 0 #0056b3;
-        }
-        
-        .checkbox-large { width: 25px; height: 25px; accent-color: var(--success); }
-
-        .empty-state { text-align: center; padding: 50px 20px; color: #aaa; font-style: italic; }
-        .clear-btn { background: none; border: none; color: #999; font-size: 11px; text-decoration: underline; margin-top: 15px; cursor: pointer; }
+        .clear { background: none; border: none; color: #bbb; font-size: 10px; text-decoration: underline; margin-top: 10px; width: 100%; text-align: center; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Shopee Manager Pro</h1>
-</header>
+<header><h1>Shopee Manager Pro 🚀</h1></header>
 
-<div class="upload-section">
-    <label for="csvInput" class="btn-upload">📂 IMPORTAR PLANILHAS</label>
-    <input type="file" id="csvInput" accept=".csv" multiple>
-    <br>
-    <button class="clear-btn" onclick="clearAll()">Apagar histórico completo</button>
+<div class="upload-area">
+    <label for="fIn" class="btn-up">📂 ADICIONAR PLANILHAS</label>
+    <input type="file" id="fIn" accept=".csv" multiple>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <span class="stat-value" id="stat-total">0</span>
-        <span class="stat-label">Total</span>
-    </div>
-    <div class="stat-card">
-        <span class="stat-value" id="stat-pending">0</span>
-        <span class="stat-label">Pendentes</span>
-    </div>
-    <div class="stat-card">
-        <span class="stat-value" id="stat-posted" style="color:var(--success)">0</span>
-        <span class="stat-label">Postados</span>
-    </div>
+<div class="stats">
+    <div class="stat-box"><span class="stat-num" id="s-total">0</span><span class="stat-txt">Total</span></div>
+    <div class="stat-box"><span class="stat-num" id="s-pend">0</span><span class="stat-txt">Pendentes</span></div>
+    <div class="stat-box"><span class="stat-num" id="s-post" style="color:#28a745">0</span><span class="stat-txt">Postados</span></div>
 </div>
 
-<div class="tab-bar">
-    <button id="tab-pendentes" class="tab-btn active" onclick="setTab('pendentes')">FALTAM POSTAR</button>
-    <button id="tab-postados" class="tab-btn" onclick="setTab('postados')">JÁ POSTADOS</button>
+<div class="tabs">
+    <button id="t-p" class="tab active" onclick="setT('p')">PENDENTES</button>
+    <button id="t-d" class="tab" onclick="setT('d')">POSTADOS</button>
 </div>
 
-<div id="product-list"></div>
+<div id="box"></div>
+<button class="clear" onclick="reset()">Apagar todos os dados da memória</button>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('shopee_v7_db')) || [];
-    let currentTab = 'pendentes';
+    let db = JSON.parse(localStorage.getItem('shp_v8')) || [];
+    let cur = 'p';
 
-    // Iniciar App
     window.onload = () => render();
 
-    // Processar Planilha
-    document.getElementById('csvInput').addEventListener('change', function(e) {
-        const files = e.target.files;
-        if (!files.length) return;
-
-        Array.from(files).forEach(file => {
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const newItems = results.data.map(item => {
-                        const fullName = item['Item Name'] || "";
-                        const link = item['Offer Link'] || item['Product Link'] || "";
-                        
-                        // 1. RESUMO INTELIGENTE DO NOME (Reduzir para que as tags apareçam bem)
-                        // Remove termos comuns de propaganda e pega as primeiras 5-6 palavras
-                        let cleanedName = fullName.replace(/(Promoção|Oferta|Premium|Barato|Lançamento|Novo|Original|2024|2025|Importado)/gi, '').trim();
-                        let shortName = cleanedName.split(' ').slice(0, 5).join(' ');
-                        if (shortName.length > 55) shortName = shortName.substring(0, 52) + "...";
-
-                        // 2. HASHTAGS (4 palavras principais)
-                        const tags = fullName.toLowerCase().replace(/[^a-z ]/g, "").split(' ')
-                                     .filter(w => w.length > 3).slice(0, 4)
-                                     .map(w => "#"+w).join(" ") + " #shopee #oferta";
-
-                        const postBody = `✨ ${shortName}\n\n🔗 ${link}\n\n${tags}`;
-
-                        return {
-                            id: Date.now() + Math.random(),
-                            posted: false,
-                            date: '',
-                            text: postBody,
-                            photoUrl: item['Product Link']
-                        };
-                    });
+    document.getElementById('fIn').addEventListener('change', function(e) {
+        Array.from(e.target.files).forEach(file => {
+            Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(r) {
+                const news = r.data.map(item => {
+                    const name = item['Item Name'] || "";
+                    const link = item['Offer Link'] || item['Product Link'] || "";
                     
-                    db = [...db, ...newItems];
-                    save();
-                    render();
-                }
-            });
+                    // Resumo: Primeiras 10 palavras
+                    let short = name.split(' ').slice(0, 10).join(' ');
+                    if(short.length > 70) short = short.substring(0, 67) + "...";
+
+                    // 6 Hashtags
+                    const tags = name.toLowerCase().replace(/[^a-z ]/g, "").split(' ')
+                                 .filter(w => w.length > 3).slice(0, 6)
+                                 .map(w => "#"+w).join(" ") + " #shopee";
+
+                    return {
+                        uid: Date.now() + Math.random(),
+                        posted: false,
+                        date: '',
+                        text: `✨ ${short}\n\n🔗 ${link}\n\n${tags}`,
+                        photo: item['Product Link']
+                    };
+                });
+                db = [...db, ...news]; save(); render();
+            }});
         });
         this.value = '';
     });
 
-    function setTab(tab) {
-        currentTab = tab;
-        document.getElementById('tab-pendentes').classList.toggle('active', tab === 'pendentes');
-        document.getElementById('tab-postados').classList.toggle('active', tab === 'postados');
-        render();
-    }
-
-    function togglePost(id) {
-        const i = db.findIndex(p => p.id === id);
+    function setT(t) { cur = t; document.getElementById('t-p').className = t=='p'?'tab active':'tab'; document.getElementById('t-d').className = t=='d'?'tab active':'tab'; render(); }
+    
+    function toggle(uid) {
+        const i = db.findIndex(p => p.uid === uid);
         db[i].posted = !db[i].posted;
-        db[i].date = db[i].posted ? new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
-        save();
-        render();
+        db[i].date = db[i].posted ? new Date().toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+        save(); render();
     }
 
     function render() {
-        const container = document.getElementById('product-list');
-        container.innerHTML = '';
+        const cont = document.getElementById('box'); cont.innerHTML = '';
+        const postados = db.filter(p => p.posted).length;
+        document.getElementById('s-total').innerText = db.length;
+        document.getElementById('s-pend').innerText = db.length - postados;
+        document.getElementById('s-post').innerText = postados;
 
-        // Estatísticas
-        const total = db.length;
-        const posted = db.filter(p => p.posted).length;
-        const pending = total - posted;
+        const list = db.filter(p => cur == 'd' ? p.posted : !p.posted);
+        if(cur == 'd') list.reverse();
 
-        document.getElementById('stat-total').innerText = total;
-        document.getElementById('stat-posted').innerText = posted;
-        document.getElementById('stat-pending').innerText = pending;
+        if(!list.length) { cont.innerHTML = '<div class="empty-state" style="text-align:center;padding:40px;color:#999">Lista vazia.</div>'; return; }
 
-        // Filtragem por Aba
-        const filtered = db.filter(p => currentTab === 'postados' ? p.posted : !p.posted);
-
-        if (filtered.length === 0) {
-            container.innerHTML = `<div class="empty-state">Nenhum produto em "${currentTab.toUpperCase()}".</div>`;
-            return;
-        }
-
-        // Se for postados, mostrar os mais recentes primeiro
-        if (currentTab === 'postados') filtered.reverse();
-
-        filtered.forEach(item => {
-            const card = document.createElement('div');
-            card.className = `product-card ${item.posted ? 'posted-card' : ''}`;
-            
-            card.innerHTML = `
-                <div class="card-header">
-                    <div class="status-check">
-                        <input type="checkbox" class="checkbox-large" ${item.posted ? 'checked' : ''} onchange="togglePost(${item.id})">
-                        ${item.posted ? 'POSTADO' : 'PENDENTE'}
-                    </div>
-                    <span class="status-date">${item.date}</span>
+        list.forEach(item => {
+            const div = document.createElement('div');
+            div.className = `card ${item.posted ? 'card-done' : ''}`;
+            div.innerHTML = `
+                <div class="card-head">
+                    <div class="check-area"><input type="checkbox" style="width:22px;height:22px" ${item.posted?'checked':''} onchange="toggle(${item.uid})"> ${item.posted?'POSTADO':'PENDENTE'}</div>
+                    <span class="date">${item.date}</span>
                 </div>
-                <textarea id="txt-${item.id}" oninput="updateText(${item.id}, this.value)">${item.text}</textarea>
-                <div class="char-count ${item.text.length > 150 ? 'limit-red' : ''}">
-                    ${item.text.length}/150 caracteres
-                </div>
-                <button class="btn-copy" onclick="copyContent('txt-${item.id}', this)">📋 COPIAR TEXTO COMPLETO</button>
-                <a href="${item.photoUrl}" target="_blank" class="btn-photos">🖼️ ABRIR PARA PEGAR FOTOS</a>
-            `;
-            container.appendChild(card);
+                <textarea id="tx-${item.uid}">${item.text}</textarea>
+                <div class="counter ${item.text.length > 150 ? 'red' : ''}">${item.text.length}/150</div>
+                <div class="btns">
+                    <button class="btn btn-cp" onclick="cp('tx-${item.uid}', this)">📋 COPIAR POST</button>
+                    <a href="${item.photo}" target="_blank" class="btn btn-ph">🖼️ PEGAR FOTOS</a>
+                </div>`;
+            cont.appendChild(div);
         });
     }
 
-    function updateText(id, val) {
-        const i = db.findIndex(p => p.id === id);
-        db[i].text = val;
-        save();
-        render(); 
+    function cp(id, btn) {
+        const el = document.getElementById(id); el.select(); document.execCommand("copy");
+        const txt = btn.innerText; btn.innerText = "✅ COPIADO!"; btn.classList.add('ok');
+        setTimeout(() => { btn.innerText = txt; btn.classList.remove('ok'); }, 1500);
     }
-
-    function copyContent(areaId, btn) {
-        const el = document.getElementById(areaId);
-        el.select();
-        document.execCommand("copy");
-        const original = btn.innerHTML;
-        btn.innerHTML = "✅ COPIADO!";
-        btn.classList.add('success');
-        setTimeout(() => { btn.innerHTML = original; btn.classList.remove('success'); }, 1500);
-    }
-
-    function save() { localStorage.setItem('shopee_v7_db', JSON.stringify(db)); }
-    function clearAll() { if(confirm("Deseja apagar todos os produtos da lista?")) { db = []; save(); render(); } }
-
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+    function save() { localStorage.setItem('shp_v8', JSON.stringify(db)); }
+    function reset() { if(confirm("Apagar tudo?")) { db = []; save(); render(); } }
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js?v=8'); }
 </script>
-
 </body>
 </html>
