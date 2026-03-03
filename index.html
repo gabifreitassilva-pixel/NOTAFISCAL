@@ -3,90 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopee IA App</title>
-    <link rel="manifest" href="manifest.json">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Gerenciador de Postagens Shopee V3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary: #ee4d2d;
+            --secondary: #28a745;
+            --bg: #f4f4f4;
+            --border: #ddd;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1300px; margin: auto; }
+        header { text-align: center; margin-bottom: 25px; }
+        h1 { color: var(--primary); margin: 0; }
+        
+        .upload-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        .btn-upload { background: var(--primary); color: white; padding: 10px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-block; transition: 0.3s; }
+        .btn-upload:hover { background: #d73211; }
+        input[type="file"] { display: none; }
+
+        .table-container { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th { background: #f8f9fa; padding: 15px; text-align: left; border-bottom: 2px solid var(--border); font-size: 0.85em; color: #555; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; transition: background 0.3s; }
+        
+        /* Colunas */
+        .col-check { width: 80px; text-align: center; }
+        .col-desc { width: 40%; }
+        .col-tags { width: 30%; }
+        .col-actions { width: 180px; }
+        .col-date { width: 120px; text-align: center; font-size: 0.8em; color: #777; font-weight: bold; }
+
+        textarea { width: 100%; height: 110px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 0.9em; resize: none; box-sizing: border-box; background: #fff; }
+        
+        .btn-copy { background: #6c757d; color: white; border: none; padding: 7px; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin-top: 5px; width: 100%; font-weight: bold; }
+        .btn-copy:hover { background: #495057; }
+        .btn-copy.success { background: var(--secondary) !important; }
+
+        .btn-photos { background: #0062cc; color: white; text-decoration: none; padding: 10px; border-radius: 4px; font-size: 0.8em; display: block; text-align: center; font-weight: bold; margin-bottom: 5px; }
+        
+        .checkbox-custom { width: 22px; height: 22px; cursor: pointer; accent-color: var(--secondary); }
+        
+        /* Estilo para Linhas Postadas */
+        .posted-row { background-color: #e9ecef !important; color: #6c757d; }
+        .posted-row textarea { background-color: #f8f9fa; color: #999; border-color: #dee2e6; }
+        .posted-row .btn-photos { background: #adb5bd; }
+        
+        .empty-msg { padding: 50px; text-align: center; color: #888; font-style: italic; }
+    </style>
 </head>
-<body class="bg-gray-100 p-4">
-    <div class="max-w-md mx-auto">
-        <header class="bg-[#ee4d2d] text-white p-6 rounded-xl shadow-lg mb-6 text-center">
-            <h1 class="text-2xl font-bold italic">Shopee IA Miner 🚀</h1>
+<body>
+    <div class="container">
+        <header>
+            <h1>📦 Shopee Post Manager V3</h1>
+            <p>Organização Inteligente: Pendentes no topo, Postados no final.</p>
         </header>
 
-        <div class="bg-white p-6 rounded-xl shadow-md mb-6">
-            <input type="text" id="prodNome" placeholder="Nome do Produto" class="w-full mb-3 p-3 border rounded-lg">
-            <input type="text" id="prodLink" placeholder="Seu Link de Afiliado" class="w-full mb-3 p-3 border rounded-lg">
-            <button id="btnSalvar" class="w-full bg-[#ee4d2d] text-white font-bold py-3 rounded-lg hover:bg-orange-700 transition">
-                SALVAR NA MINHA LISTA
-            </button>
+        <div class="upload-card">
+            <label for="csvInput" class="btn-upload">📂 SELECIONAR PLANILHA CSV</label>
+            <input type="file" id="csvInput" accept=".csv">
         </div>
 
-        <h2 class="font-bold text-gray-700 mb-4">Meus Achadinhos:</h2>
-        <div id="listaProdutos" class="space-y-3">
-            </div>
+        <div class="table-container">
+            <table id="postTable">
+                <thead>
+                    <tr>
+                        <th class="col-check">Postado?</th>
+                        <th class="col-date">Data Post</th>
+                        <th class="col-desc">Conteúdo da Legenda</th>
+                        <th class="col-tags">Hashtags</th>
+                        <th class="col-actions">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div id="emptyState" class="empty-msg">Aguardando importação de arquivo...</div>
+        </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <script>
+        let products = [];
 
-        // CONFIGURAÇÃO DO SEU FIREBASE (ATUALIZADA)
-        const firebaseConfig = {
-            apiKey: "AIzaSyC3HutqFhqnc8KtdmwDUDl3UaNYs_grQMc",
-            authDomain: "shopee-77708.firebaseapp.com",
-            projectId: "shopee-77708",
-            storageBucket: "shopee-77708.firebasestorage.app",
-            messagingSenderId: "174296367346",
-            appId: "1:174296367346:web:e96f4378ce01230fcbd06b",
-            measurementId: "G-B5GSMMCEWF"
-        };
-
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // FUNÇÃO PARA SALVAR
-        const salvarNoFirebase = async () => {
-            const nome = document.getElementById('prodNome').value;
-            const link = document.getElementById('prodLink').value;
-
-            if (!nome || !link) {
-                alert("Por favor, preencha o nome e o link!");
-                return;
-            }
-
-            try {
-                await addDoc(collection(db, "achadinhos"), { 
-                    nome: nome, 
-                    link: link, 
-                    data: new Date() 
-                });
-                alert("Produto salvo com sucesso!");
-                document.getElementById('prodNome').value = "";
-                document.getElementById('prodLink').value = "";
-            } catch (e) { 
-                console.error("Erro ao salvar: ", e);
-                alert("Erro ao salvar. Verifique as Regras do Database.");
-            }
-        };
-
-        // Atribuir evento ao botão
-        document.getElementById('btnSalvar').addEventListener('click', salvarNoFirebase);
-
-        // FUNÇÃO PARA LER EM TEMPO REAL (Ordenado por data)
-        const q = query(collection(db, "achadinhos"), orderBy("data", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const lista = document.getElementById('listaProdutos');
-            lista.innerHTML = "";
-            snapshot.forEach(doc => {
-                const item = doc.data();
-                lista.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-500">
-                        <p class="font-bold text-gray-800">${item.nome}</p>
-                        <a href="${item.link}" class="text-sm text-blue-500 underline" target="_blank">Ver Link de Afiliado</a>
-                    </div>`;
+        document.getElementById('csvInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    products = results.data.map((item, index) => ({
+                        ...item,
+                        id: index,
+                        posted: false,
+                        postDate: '',
+                        generatedDesc: createDescription(item),
+                        generatedTags: createHashtags(item)
+                    }));
+                    renderTable();
+                }
             });
         });
+
+        function createDescription(item) {
+            const name = item['Item Name'] || "";
+            const price = item['Price'] || "";
+            const link = item['Offer Link'] || item['Product Link'] || "";
+            return `🔥 PROMOÇÃO 🔥\n\n✨ ${name}\n\n💰 Por apenas R$ ${price}\n\n🔗 Link de compra: ${link}\n\n⚠️ Corra antes que o estoque acabe!`;
+        }
+
+        function createHashtags(item) {
+            const name = (item['Item Name'] || "").toLowerCase();
+            const words = name.replace(/[^a-zA-Záàâãéèêíïóôõöúç ]/g, "").split(' ');
+            const relevant = words.filter(w => w.length > 3).slice(0, 6);
+            let tags = relevant.map(w => "#" + w).join(" ");
+            return tags + " #shopee #ofertas #promoção #compras";
+        }
+
+        function togglePosted(id) {
+            const index = products.findIndex(p => p.id === id);
+            if (index > -1) {
+                products[index].posted = !products[index].posted;
+                if (products[index].posted) {
+                    const now = new Date();
+                    products[index].postDate = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    products[index].postDate = '';
+                }
+                renderTable();
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+            
+            if (products.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            // Ordenação: primeiro os não postados (false vem antes de true), depois por data se necessário
+            const sortedProducts = [...products].sort((a, b) => a.posted - b.posted);
+
+            sortedProducts.forEach((item) => {
+                const tr = document.createElement('tr');
+                if (item.posted) tr.className = 'posted-row';
+                
+                tr.innerHTML = `
+                    <td class="col-check">
+                        <input type="checkbox" class="checkbox-custom" ${item.posted ? 'checked' : ''} onchange="togglePosted(${item.id})">
+                    </td>
+                    <td class="col-date">${item.postDate || '--'}</td>
+                    <td class="col-desc">
+                        <textarea id="desc-${item.id}">${item.generatedDesc.replace(/\\n/g, '\n')}</textarea>
+                        <button class="btn-copy" onclick="copyValue('desc-${item.id}', this)">COPIAR LEGENDA</button>
+                    </td>
+                    <td class="col-tags">
+                        <textarea id="tags-${item.id}">${item.generatedTags}</textarea>
+                        <button class="btn-copy" onclick="copyValue('tags-${item.id}', this)">COPIAR HASHTAGS</button>
+                    </td>
+                    <td class="col-actions">
+                        <a href="${item['Product Link']}" target="_blank" class="btn-photos">🖼️ PEGAR FOTOS</a>
+                        <div style="text-align:center; font-size:10px; color:#aaa;">ID: ${item['Item Id']}</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function copyValue(id, btn) {
+            const textarea = document.getElementById(id);
+            textarea.select();
+            document.execCommand("copy");
+            
+            const originalText = btn.innerText;
+            btn.innerText = "✅ COPIADO!";
+            btn.classList.add('success');
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('success');
+            }, 1500);
+        }
     </script>
 </body>
 </html>
