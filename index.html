@@ -146,10 +146,10 @@
             box-shadow: 0 6px 15px rgba(109, 40, 217, 0.35);
         }
 
-        /* Dashboard Counters Grid */
+        /* Dashboard Counters Grid (Ajustado para 3 colunas perfeitamente alinhadas) */
         .counters-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-bottom: 25px;
         }
@@ -199,7 +199,6 @@
         .card-todos h3 { color: #8b5cf6; }
         .card-cobrados h3 { color: #2563eb; }
         .card-recebidos h3 { color: #059669; }
-        .card-cadastros h3 { color: #dc2626; }
 
         /* Filter & Search Header */
         .filter-bar {
@@ -213,6 +212,12 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.01);
         }
 
+        .filter-label-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
         .current-filter {
             background: #faf5ff;
             color: #6b21a8;
@@ -222,6 +227,33 @@
             font-size: 13px;
             letter-spacing: 0.5px;
             border: 1px solid #f3e8ff;
+        }
+
+        /* Botões de Exportação */
+        .export-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-export {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-export:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            color: #1e293b;
         }
 
         .search-wrapper {
@@ -768,6 +800,38 @@
         .toast-notification.error {
             border-left: 4px solid #ef4444;
         }
+
+        /* ================= ESTILOS ESPECÍFICOS DE IMPRESSÃO (PDF) ================= */
+        @media print {
+            body {
+                background: white !important;
+                color: #1e293b !important;
+                padding: 0 !important;
+            }
+            /* Ocultar elementos desnecessários no relatório impresso */
+            .topbar, .counters-grid, .filter-bar, .topbar-actions, 
+            .btn-primary, .btn-secondary, .slide-panel, .modal-overlay, .toast-notification,
+            th:last-child, td:last-child {
+                display: none !important;
+            }
+            .table-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+            }
+            .data-table {
+                width: 100% !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+            .data-table th, .data-table td {
+                border-bottom: 1px solid #cbd5e1 !important;
+                padding: 12px !important;
+                color: #1e293b !important;
+                background: transparent !important;
+                font-size: 12px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -797,7 +861,7 @@
         </div>
     </div>
 
-    <!-- COUNTERS GRID -->
+    <!-- COUNTERS GRID (Restruturado para 3 cards perfeitamente distribuídos) -->
     <div class="counters-grid">
         <div class="counter-card card-todos active-filter" onclick="filterByStatus('TODOS')">
             <div class="counter-info">
@@ -820,18 +884,22 @@
             </div>
             <div class="counter-icon">✅</div>
         </div>
-        <div class="counter-card card-cadastros" onclick="filterByStatus('Cadastrado')">
-            <div class="counter-info">
-                <h3>Registos</h3>
-                <div class="counter-value" id="count-cadastros">0</div>
-            </div>
-            <div class="counter-icon">📝</div>
-        </div>
     </div>
 
     <!-- FILTER & SEARCH BAR -->
     <div class="filter-bar">
-        <div class="current-filter" id="currentFilterLabel">A EXIBIR: TODOS OS CLIENTES</div>
+        <div class="filter-label-group">
+            <div class="current-filter" id="currentFilterLabel">A EXIBIR: TODOS OS CLIENTES</div>
+            <!-- Botões Rápidos de Exportação -->
+            <div class="export-actions">
+                <button class="btn-export" onclick="window.print()" title="Imprimir Relatório ou Exportar para PDF">
+                    📄 PDF / Imprimir
+                </button>
+                <button class="btn-export" onclick="exportarExcel()" title="Exportar tabela de clientes para arquivo Excel (.CSV)">
+                    📥 Excel
+                </button>
+            </div>
+        </div>
         <div class="search-wrapper">
             <span class="search-icon">🔍</span>
             <input type="text" class="search-input" id="tableSearch" placeholder="Procurar por Empresa, Sócio ou CNPJ..." oninput="filterTable()">
@@ -983,7 +1051,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Nome do Comunicado:</label>
-                    <input type="text" class="form-control" id="modeloNome" placeholder="Ex: Lembrete Dia 03">
+                    <input type="text" class="control form-control" id="modeloNome" placeholder="Ex: Lembrete Dia 03">
                 </div>
                 <div class="form-group">
                     <label>Tipo de Comunicado:</label>
@@ -1096,7 +1164,7 @@
                 </div>
             </div>
 
-            <!-- Lista de Clientes Registados no Painel -->
+            <!-- Lista de Clientes Registados no Panel -->
             <div id="panelClientsList" style="margin-top: 15px;"></div>
         </div>
 
@@ -1230,6 +1298,42 @@
         // Abrir WhatsApp Geral como contingência caso o link esteja corrompido ou o utilizador já esteja no grupo
         window.abrirWhatsAppGeral = function() {
             window.open("https://web.whatsapp.com/", "_blank");
+        };
+
+        // Exportar a tabela atual de utilizadores em formato amigável para Excel (.csv com UTF-8 BOM)
+        window.exportarExcel = function() {
+            if (clientes.length === 0) {
+                window.showToast("Nenhum cliente para exportar!", "error");
+                return;
+            }
+            let csvContent = "\uFEFF"; // UTF-8 BOM para abrir acentos de forma correta no Excel
+            csvContent += "Razão Social;CNPJ;Contacto;WhatsApp/Grupo;Últimos Meses Cobrados;Última Cobrança;Cobrado Por;Última Baixa;Baixado Por;Status\r\n";
+            
+            clientes.forEach(c => {
+                const cnpjLimpo = c.cnpj ? c.cnpj.replace(/"/g, '""') : "";
+                const razaoLimpa = c.razao ? c.razao.replace(/"/g, '""') : "";
+                const socioLimpo = c.socio ? c.socio.replace(/"/g, '""') : "";
+                const whatsappLimpo = c.whatsapp ? c.whatsapp.replace(/"/g, '""') : "";
+                const mesesLimpo = c.meses ? c.meses.replace(/"/g, '""') : "";
+                const ultimaCobrancaLimpa = c.ultimaCobranca ? c.ultimaCobranca.replace(/"/g, '""') : "";
+                const cobradoPorLimpo = c.cobradoPor ? c.cobradoPor.replace(/"/g, '""') : "";
+                const ultimaBaixaLimpa = c.ultimaBaixa ? c.ultimaBaixa.replace(/"/g, '""') : "";
+                const baixadoPorLimpo = c.baixadoPor ? c.baixadoPor.replace(/"/g, '""') : "";
+                const statusLimpo = c.status ? c.status.replace(/"/g, '""') : "";
+                
+                csvContent += `"${razaoLimpa}";"${cnpjLimpo}";"${socioLimpo}";"${whatsappLimpo}";"${mesesLimpo}";"${ultimaCobrancaLimpa}";"${cobradoPorLimpo}";"${ultimaBaixaLimpa}";"${baixadoPorLimpo}";"${statusLimpo}"\r\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "gestao_extratos_clientes.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.showToast("Dados exportados para Excel com sucesso!");
         };
 
         // Controle Global de Modais
@@ -1537,7 +1641,8 @@
                     if(!linha.trim()) continue;
 
                     const cnpjRegex = /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})|(\d{14})/;
-                    const matchCnpj = inline.match(cnpjRegex);
+                    // CORREÇÃO CRÍTICA DO ERRO DE IMPORTAÇÃO: alterado de "inline.match" para "linha.match"
+                    const matchCnpj = linha.match(cnpjRegex);
                     
                     let cnpj = matchCnpj ? matchCnpj[0] : "CNPJ não localizado";
                     let razao = linha.replace(cnpj, '').replace(/[\r\n]+/g, ' ').trim();
@@ -1670,9 +1775,6 @@
             } else if (status === 'Recebido') {
                 document.querySelector('.card-recebidos').classList.add('active-filter');
                 document.getElementById('currentFilterLabel').innerText = 'A EXIBIR: PAGAMENTOS RECEBIDOS';
-            } else if (status === 'Cadastrado') {
-                document.querySelector('.card-cadastros').classList.add('active-filter');
-                document.getElementById('currentFilterLabel').innerText = 'A EXIBIR: CLIENTES RECENTEMENTE REGISTADOS';
             }
 
             atualizarUI();
@@ -1691,17 +1793,11 @@
 
             let clientesFiltrados = clientes;
             if (currentFilterStatus !== 'TODOS') {
-                if (currentFilterStatus === 'Cadastrado') {
-                    // Trata status de novos cadastros / pendentes de cobrança
-                    clientesFiltrados = clientes.filter(c => c.status === 'Cadastrado' || c.status === 'Pendente');
-                } else {
-                    clientesFiltrados = clientes.filter(c => c.status === currentFilterStatus);
-                }
+                clientesFiltrados = clientes.filter(c => c.status === currentFilterStatus);
             }
 
             document.getElementById('countBtnTag').innerText = clientes.length;
             document.getElementById('count-todos').innerText = clientes.length;
-            document.getElementById('count-cadastros').innerText = clientes.filter(c => c.status === 'Cadastrado' || c.status === 'Pendente').length;
             document.getElementById('count-cobrados').innerText = clientes.filter(c => c.status === 'Cobrado').length;
             document.getElementById('count-recebidos').innerText = clientes.filter(c => c.status === 'Recebido').length;
 
