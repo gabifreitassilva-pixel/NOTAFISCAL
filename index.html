@@ -123,12 +123,20 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1">Selecione o Município / Portal</label>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col gap-2">
                         <select id="passoPrefeituraSelector" onchange="onPassoPrefeituraChange()" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none truncate">
                         </select>
-                        <button onclick="askNewManualName()" class="bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 px-2.5 py-1.5 rounded-lg transition shrink-0" title="Criar Novo Passo a Passo">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex justify-end gap-1.5">
+                            <button onclick="askNewManualName()" class="inline-flex items-center gap-1 bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shadow-sm" title="Criar Novo Passo a Passo">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Incluir
+                            </button>
+                            <button onclick="openEditManualModal()" class="inline-flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shadow-sm" title="Editar Passo a Passo Selecionado">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editar
+                            </button>
+                            <button onclick="deleteManual()" class="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/30 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shadow-sm" title="Apagar Passo a Passo Selecionado">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Apagar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -484,6 +492,55 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="manualEditModal" class="fixed inset-0 bg-slate-900/70 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4 transition-opacity">
+        <div class="bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col transition-colors">
+            <div class="p-5 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-900">
+                <div class="flex items-center gap-3">
+                    <div class="bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-400 p-2 rounded-lg">
+                        <i data-lucide="edit-3" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Editar Manual Passo a Passo</h3>
+                        <p id="manualEditSubtitle" class="text-xs text-slate-500 dark:text-zinc-400">Município / Portal</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeEditManualModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-800 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-5 flex-1 bg-white dark:bg-[#111111] flex flex-col gap-4">
+                <div class="flex-1 flex flex-col">
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1">Conteúdo do Manual (Texto Livre / SOP)</label>
+                    <textarea id="manualEditTextarea" class="w-full flex-1 min-h-[350px] px-3 py-2 border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-white rounded-lg text-xs font-mono p-4 focus:ring-2 focus:ring-brand-500 outline-none custom-scrollbar leading-relaxed"></textarea>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-100 dark:border-zinc-800 flex justify-end gap-2 bg-slate-50 dark:bg-zinc-900/50">
+                <button onclick="closeEditManualModal()" class="px-4 py-2 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition">Cancelar</button>
+                <button onclick="saveManualChanges()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="passoFullScreenModal" class="fixed inset-0 bg-slate-900/70 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4 transition-opacity">
+        <div class="bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col transition-colors">
+            <div class="p-5 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-brand-600 text-white">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="help-circle" class="w-5 h-5"></i>
+                    <h3 id="passoFullScreenTitle" class="text-base font-bold">Manual de Operação</h3>
+                </div>
+                <button onclick="closePassoFullScreen()" class="text-brand-100 hover:text-white p-1 rounded-lg hover:bg-brand-700 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-50 dark:bg-zinc-950">
+                <pre id="passoFullScreenText" class="text-xs text-slate-800 dark:text-zinc-200 font-mono whitespace-pre-wrap leading-relaxed select-all bg-white dark:bg-[#111111] p-4 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-inner"></pre>
+            </div>
+            <div class="p-4 border-t border-slate-100 dark:border-zinc-800 flex justify-end gap-2 bg-white dark:bg-[#111111]">
+                <button onclick="closePassoFullScreen()" class="px-4 py-2 bg-slate-800 hover:bg-black text-white dark:bg-zinc-200 dark:hover:bg-white dark:text-black rounded-lg text-xs font-bold shadow-sm transition">Entendido</button>
             </div>
         </div>
     </div>
@@ -1087,6 +1144,8 @@
                     else if (!document.getElementById('customPromptModal').classList.contains('hidden')) closeCustomPrompt(false);
                     else if (!document.getElementById('tomadorModal').classList.contains('hidden')) closeTomadorModal();
                     else if (!document.getElementById('clientModal').classList.contains('hidden')) closeModal();
+                    else if (!document.getElementById('manualEditModal').classList.contains('hidden')) closeEditManualModal();
+                    else if (!document.getElementById('passoFullScreenModal').classList.contains('hidden')) closePassoFullScreen();
                 }
             });
         }
@@ -1402,13 +1461,14 @@
             document.getElementById('summaryModal').classList.add('hidden');
         }
 
-        // --- SISTEMA DE MANUAIS ---
+        // --- SISTEMA DE MANUAIS (INCLUIR, EDITAR, EXCLUIR) ---
         function populatePrefeituraDropdowns() {
             const selector = document.getElementById('passoPrefeituraSelector');
+            const currentVal = selector.value;
             selector.innerHTML = '';
             
             const defaultOpt = document.createElement('option');
-            defaultOpt.value = ""; defaultOpt.disabled = true; defaultOpt.selected = true;
+            defaultOpt.value = ""; defaultOpt.disabled = true;
             defaultOpt.textContent = "Escolha um Município...";
             selector.appendChild(defaultOpt);
 
@@ -1418,6 +1478,12 @@
                 opt.value = city; opt.textContent = city;
                 selector.appendChild(opt);
             });
+
+            if(currentVal && prefeituraPassos[currentVal]) {
+                selector.value = currentVal;
+            } else {
+                selector.value = "";
+            }
         }
 
         function onPassoPrefeituraChange() {
@@ -1439,7 +1505,7 @@
                         saveData(); populatePrefeituraDropdowns();
                     }
                     document.getElementById('passoPrefeituraSelector').value = manualName;
-                    openPassoAPassoFullScreen();
+                    openEditManualModal();
                 }
             };
         }
@@ -1448,6 +1514,58 @@
             document.getElementById('customPromptModal').classList.add('hidden');
             if (confirmed && promptCallback) promptCallback(document.getElementById('customPromptInput').value);
             promptCallback = null;
+        }
+
+        function openEditManualModal() {
+            const selectedManual = document.getElementById('passoPrefeituraSelector').value;
+            if(!selectedManual) {
+                showCustomAlert('Aviso', 'Por favor, escolha um Município/Portal na lista primeiro para poder editar.');
+                return;
+            }
+            document.getElementById('manualEditSubtitle').textContent = selectedManual;
+            document.getElementById('manualEditTextarea').value = prefeituraPassos[selectedManual] || '';
+            document.getElementById('manualEditModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('manualEditTextarea').focus(), 100);
+        }
+
+        function closeEditManualModal() {
+            document.getElementById('manualEditModal').classList.add('hidden');
+        }
+
+        function saveManualChanges() {
+            const selectedManual = document.getElementById('passoPrefeituraSelector').value;
+            if(!selectedManual) return;
+            prefeituraPassos[selectedManual] = document.getElementById('manualEditTextarea').value;
+            saveData();
+            closeEditManualModal();
+            showCustomAlert('Sucesso', 'Manual do passo a passo guardado com sucesso!');
+        }
+
+        function deleteManual() {
+            const selectedManual = document.getElementById('passoPrefeituraSelector').value;
+            if(!selectedManual) {
+                showCustomAlert('Aviso', 'Por favor, escolha um Município/Portal na lista primeiro para poder apagar.');
+                return;
+            }
+            showCustomConfirm('Apagar Manual', `Pretende realmente apagar o manual completo de "${selectedManual}"?`, () => {
+                delete prefeituraPassos[selectedManual];
+                saveData();
+                populatePrefeituraDropdowns();
+                showCustomAlert('Removido', 'Passo a passo excluído!');
+            });
+        }
+
+        function openPassoAPassoFullScreen() {
+            const selectedManual = document.getElementById('passoPrefeituraSelector').value;
+            if(!selectedManual) return;
+            document.getElementById('passoFullScreenTitle').textContent = `Manual - ${selectedManual}`;
+            document.getElementById('passoFullScreenText').textContent = prefeituraPassos[selectedManual] || 'Nenhum conteúdo configurado.';
+            document.getElementById('passoFullScreenModal').classList.remove('hidden');
+        }
+
+        function closePassoFullScreen() {
+            document.getElementById('passoFullScreenModal').classList.add('hidden');
+            document.getElementById('passoPrefeituraSelector').value = "";
         }
 
         // --- WORKSTATION & EMISSÃO ---
