@@ -26,7 +26,6 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
-        // Configura o worker do PDF.js para processamento em segundo plano
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     </script>
 
@@ -1434,7 +1433,7 @@
             document.getElementById('summaryModal').classList.add('hidden');
         }
 
-        // --- SISTEMA DE DROPDOWN EMBUTIDO COM PROCESSADOR PDF MOZILLA (OPÇÃO 2) ---
+        // --- DROPDOWN INTERNO DE PASSO A PASSO (PDF MOTOR - RENDERIZAÇÃO ESTÁVEL) ---
         function toggleCustomDropdown() {
             const drop = document.getElementById('customDropdownMenu');
             drop.classList.toggle('hidden');
@@ -1458,7 +1457,7 @@
                 
                 const textSpan = document.createElement('span');
                 textSpan.className = "font-medium truncate flex-1 pr-2 py-0.5 flex items-center gap-1.5";
-                textSpan.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i> ${city}`;
+                textSpan.innerHTML = '<i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i> ' + city;
                 textSpan.onclick = () => {
                     selectManualItem(city);
                     openPassoAPassoFullScreen();
@@ -1496,7 +1495,7 @@
                 listContainer.appendChild(wrapper);
             });
 
-            if (selectedManualKey && prefeituraPassos[selectedManualKey]) {
+            if (selectedManualKey && prefeituraPassos[selectedManualKey] !== undefined) {
                 document.getElementById('customDropdownSelectedText').textContent = selectedManualKey;
             } else {
                 selectedManualKey = "";
@@ -1561,7 +1560,9 @@
                 prefeituraPassos[selectedManualKey] = base64Data; 
                 saveData();
                 populatePrefeituraDropdowns();
-                showCustomAlert('Sucesso', `Arquivo PDF anexado com sucesso a: ${selectedManualKey}!`);
+                
+                // CORREÇÃO: Abre automaticamente a renderização em tela cheia do PDF recém-salvo
+                openPassoAPassoFullScreen();
             };
             reader.readAsDataURL(file);
             event.target.value = '';
@@ -1578,7 +1579,7 @@
             });
         }
 
-        // FUNÇÃO MOTOR - RENDERIZAÇÃO ESTÁVEL DE PDF VIA CANVAS DO PDF.JS (OPÇÃO 2)
+        // MOTOR CENTRAL DE RENDERIZAÇÃO VIA CANVAS DO PDF.JS
         async function openPassoAPassoFullScreen() {
             if(!selectedManualKey) return;
             document.getElementById('passoFullScreenTitle').textContent = `Manual de Operação - ${selectedManualKey}`;
@@ -1586,9 +1587,7 @@
             const pdfPagesContainer = document.getElementById('pdfPagesContainer');
             const fallback = document.getElementById('passoNoPdfFallback');
             
-            // Limpa renderizações anteriores
             pdfPagesContainer.innerHTML = '';
-            
             const pdfDataUri = prefeituraPassos[selectedManualKey];
 
             if (pdfDataUri && pdfDataUri.startsWith('data:application/pdf')) {
@@ -1596,7 +1595,6 @@
                 pdfPagesContainer.classList.remove('hidden');
                 
                 try {
-                    // Extrai a parte pura do base64 ignorando a marcação URI inicial
                     const base64Content = pdfDataUri.split(',')[1];
                     const rawBinary = atob(base64Content);
                     const uint8Array = new Uint8Array(rawBinary.length);
@@ -1604,19 +1602,15 @@
                         uint8Array[i] = rawBinary.charCodeAt(i);
                     }
 
-                    // Carrega o binário na biblioteca Mozilla PDF.js
                     const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
                     const pdf = await loadingTask.promise;
                     
-                    // Passa folha por folha renderizando em canvases sequenciais de alta resolução
                     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                         const page = await pdf.getPage(pageNum);
-                        
-                        // Define escala confortável para visualização
                         const viewport = page.getViewport({ scale: 1.3 });
                         
                         const canvas = document.createElement('canvas');
-                        canvas.className = "shadow-lg bg-white rounded border border-slate-200 dark:border-zinc-800 max-w-full";
+                        canvas.className = "shadow-lg bg-white rounded border border-slate-200 dark:border-zinc-800 max-w-full block mx-auto";
                         const context = canvas.getContext('2d');
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
@@ -1631,7 +1625,7 @@
                     }
                 } catch (error) {
                     console.error("Erro interno ao renderizar PDF com PDF.js:", error);
-                    pdfPagesContainer.innerHTML = `<div class="p-6 text-red-500 font-bold text-center">Ocorreu um erro ao processar e desenhar o conteúdo deste arquivo PDF. Tente reenviar um arquivo válido.</div>`;
+                    pdfPagesContainer.innerHTML = `<div class="p-6 text-red-500 font-bold text-center bg-white dark:bg-zinc-900 rounded-xl">Ocorreu um erro ao processar e desenhar o conteúdo deste arquivo PDF. Tente reenviar um arquivo válido.</div>`;
                 }
             } else {
                 pdfPagesContainer.classList.add('hidden');
@@ -1644,7 +1638,7 @@
 
         function closePassoFullScreen() {
             document.getElementById('passoFullScreenModal').classList.add('hidden');
-            document.getElementById('pdfPagesContainer').innerHTML = ''; // Libera a memória limpando os elementos de lona
+            document.getElementById('pdfPagesContainer').innerHTML = ''; 
         }
 
         function downloadActivePdf() {
@@ -1901,7 +1895,8 @@
             const id = document.getElementById('clientId').value;
             const municipioVal = document.getElementById('formMunicipio').value;
 
-            if (municipioVal && !prefeituraPassos[municipioVal]) {
+            // CORREÇÃO: Cria a chave vazia APENAS se o município de fato não existir na mesa de operações
+            if (municipioVal && prefeituraPassos[municipioVal] === undefined) {
                 prefeituraPassos[municipioVal] = "";
                 populatePrefeituraDropdowns();
             }
