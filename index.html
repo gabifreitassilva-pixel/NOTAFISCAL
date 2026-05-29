@@ -128,7 +128,12 @@
                     </div>
                 </div>
                 <div class="relative">
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1">Selecione o Município / Portal</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1 flex justify-between items-center">
+                        <span>Selecione o Município / Portal</span>
+                        <span id="pdfUploadLoaderSpinner" class="hidden text-brand-600 dark:text-brand-400 text-[9px] font-bold animate-pulse flex items-center gap-1">
+                            <i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Salvando em Nuvem...
+                        </span>
+                    </label>
                     <div class="flex items-center gap-2">
                         <div class="relative flex-1">
                             <button type="button" onclick="toggleCustomDropdown()" id="customDropdownTrigger" class="w-full flex items-center justify-between px-3 py-1.5 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-lg text-xs font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
@@ -1204,7 +1209,7 @@
                                 infoPrazo = `O vencimento é hoje! (Alvo: ${t.diaFaturamento})`;
                             } else if (st.tipo === 'alerta') {
                                 statusVisual = `<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded border border-yellow-200 dark:border-yellow-800/50">VENCE EM ${st.diff} DIA(S)</span>`;
-                                infoPrazo = `Atenção: Vence em ${st.diff} dia(s) (Alvo: ${t.diaFaturamento})`;
+                                infoPrazo = `Atenção: Vence in ${st.diff} dia(s) (Alvo: ${t.diaFaturamento})`;
                             }
 
                             content.innerHTML += `
@@ -1433,7 +1438,7 @@
             document.getElementById('summaryModal').classList.add('hidden');
         }
 
-        // --- DROPDOWN INTERNO DE PASSO A PASSO (PDF MOTOR - RENDERIZAÇÃO ESTÁVEL) ---
+        // --- SISTEMA DE DROPDOWN EMBUTIDO COM ARQUIVO EM NUVEM COMPARTILHADO ---
         function toggleCustomDropdown() {
             const drop = document.getElementById('customDropdownMenu');
             drop.classList.toggle('hidden');
@@ -1540,7 +1545,8 @@
             promptCallback = null;
         }
 
-        function handleManualPdfUpload(event) {
+        // MOTOR INTEGRADO: CRIA LINK WEB DE PDF EM NUVEM PARA EVITAR LIMITE DE TAMANHO DO FIRESTORE
+        async function handleManualPdfUpload(event) {
             const file = event.target.files[0];
             if (!file || !selectedManualKey) return;
 
@@ -1549,22 +1555,42 @@
                 return;
             }
 
-            if (file.size > 4 * 1024 * 1024) {
-                showCustomAlert('Arquivo Muito Grande', 'Para manter o sincronismo veloz, selecione um arquivo de até 4MB.');
-                return;
-            }
+            const spinner = document.getElementById('pdfUploadLoaderSpinner');
+            if(spinner) spinner.classList.remove('hidden');
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64Data = e.target.result;
-                prefeituraPassos[selectedManualKey] = base64Data; 
-                saveData();
-                populatePrefeituraDropdowns();
+            try {
+                // Prepara payload multipart oficial
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // Envia para repositório de nuvem pública anônima e confiável (Catbox / File.io)
+                // Usando file.io que aceita uploads diretos de arquivos temporários e persistentes estáveis
+                const uploadResponse = await fetch('https://file.io', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if(!uploadResponse.ok) throw new Error("Erro na API de Nuvem");
+                const uploadData = await uploadResponse.json();
                 
-                // CORREÇÃO: Abre automaticamente a renderização em tela cheia do PDF recém-salvo
-                openPassoAPassoFullScreen();
-            };
-            reader.readAsDataURL(file);
+                if (uploadData && uploadData.link) {
+                    // Armazena unicamente o LINK seguro na base de dados Firebase compartilhada!
+                    prefeituraPassos[selectedManualKey] = uploadData.link;
+                    saveData();
+                    populatePrefeituraDropdowns();
+                    
+                    if(spinner) spinner.classList.add('hidden');
+                    
+                    // Renderiza imediatamente na tela central do usuário
+                    openPassoAPassoFullScreen();
+                } else {
+                    throw new Error("Link não gerado");
+                }
+            } catch (err) {
+                console.error("Falha no upload em nuvem externa:", err);
+                if(spinner) spinner.classList.add('hidden');
+                showCustomAlert('Falha no Armazenamento', 'Não foi possível salvar o arquivo na nuvem de sincronia rápida. Certifique-se de estar conectado à internet e tente novamente.');
+            }
             event.target.value = '';
         }
 
@@ -1579,7 +1605,7 @@
             });
         }
 
-        // MOTOR CENTRAL DE RENDERIZAÇÃO VIA CANVAS DO PDF.JS
+        // PROCESSADOR CENTRAL: BAIXA O BINÁRIO DA URL EM TEMPO REAL E DESENHA O MANUAL NA TELA
         async function openPassoAPassoFullScreen() {
             if(!selectedManualKey) return;
             document.getElementById('passoFullScreenTitle').textContent = `Manual de Operação - ${selectedManualKey}`;
@@ -1587,30 +1613,35 @@
             const pdfPagesContainer = document.getElementById('pdfPagesContainer');
             const fallback = document.getElementById('passoNoPdfFallback');
             
-            pdfPagesContainer.innerHTML = '';
-            const pdfDataUri = prefeituraPassos[selectedManualKey];
+            pdfPagesContainer.innerHTML = '<div id="pdfLoadingInternalMsg" class="p-8 text-center text-xs font-bold animate-pulse text-brand-600">Buscando arquivo guardado em nuvem compartilhada...</div>';
+            
+            const targetPdfUrl = prefeituraPassos[selectedManualKey];
 
-            if (pdfDataUri && pdfDataUri.startsWith('data:application/pdf')) {
+            if (targetPdfUrl && (targetPdfUrl.startsWith('http://') || targetPdfUrl.startsWith('https://'))) {
                 fallback.classList.add('hidden');
                 pdfPagesContainer.classList.remove('hidden');
                 
                 try {
-                    const base64Content = pdfDataUri.split(',')[1];
-                    const rawBinary = atob(base64Content);
-                    const uint8Array = new Uint8Array(rawBinary.length);
-                    for (let i = 0; i < rawBinary.length; i++) {
-                        uint8Array[i] = rawBinary.charCodeAt(i);
-                    }
+                    // Faz a requisição do arquivo binário real através do link universal salvo no Firebase
+                    const proxyUrl = targetPdfUrl; 
+                    const response = await fetch(proxyUrl);
+                    if(!response.ok) throw new Error("Erro ao baixar documento da nuvem");
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer);
+
+                    // Limpa mensagem de carregamento inicial
+                    pdfPagesContainer.innerHTML = '';
 
                     const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
                     const pdf = await loadingTask.promise;
                     
                     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                         const page = await pdf.getPage(pageNum);
-                        const viewport = page.getViewport({ scale: 1.3 });
+                        const viewport = page.getViewport({ scale: 1.2 });
                         
                         const canvas = document.createElement('canvas');
-                        canvas.className = "shadow-lg bg-white rounded border border-slate-200 dark:border-zinc-800 max-w-full block mx-auto";
+                        canvas.className = "shadow-md bg-white rounded border border-slate-200 dark:border-zinc-800 max-w-full block mx-auto my-2";
                         const context = canvas.getContext('2d');
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
@@ -1624,10 +1655,11 @@
                         await page.render(renderContext).promise;
                     }
                 } catch (error) {
-                    console.error("Erro interno ao renderizar PDF com PDF.js:", error);
-                    pdfPagesContainer.innerHTML = `<div class="p-6 text-red-500 font-bold text-center bg-white dark:bg-zinc-900 rounded-xl">Ocorreu um erro ao processar e desenhar o conteúdo deste arquivo PDF. Tente reenviar um arquivo válido.</div>`;
+                    console.error("Erro interno ao renderizar link com PDF.js:", error);
+                    pdfPagesContainer.innerHTML = `<div class="p-6 text-red-500 font-bold text-center bg-white dark:bg-zinc-900 rounded-xl border border-red-100">O arquivo salvo expirou na nuvem ou não pôde ser baixado pelo navegador. Clique no ícone do Lápis para reenviar o PDF.</div>`;
                 }
             } else {
+                pdfPagesContainer.innerHTML = '';
                 pdfPagesContainer.classList.add('hidden');
                 fallback.classList.remove('hidden');
             }
@@ -1643,14 +1675,11 @@
 
         function downloadActivePdf() {
             if (!selectedManualKey || !prefeituraPassos[selectedManualKey]) return;
-            const dataUri = prefeituraPassos[selectedManualKey];
-            
-            const link = document.createElement('a');
-            link.href = dataUri;
-            link.download = `Manual_Emissao_${selectedManualKey.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const targetUrl = prefeituraPassos[selectedManualKey];
+            if (targetUrl.startsWith('http')) {
+                // Abre o link direto do documento em uma nova guia para download limpo
+                window.open(targetUrl, '_blank');
+            }
         }
 
         // --- WORKSTATION & EMISSÃO ---
@@ -1803,7 +1832,7 @@
             if (!currentActiveWorkstationClientId || !tomadorId) return;
             const clientIndex = clients.findIndex(c => c.id === currentActiveWorkstationClientId);
             if (clientIndex !== -1) {
-                const tomIndex = clients[clientIndex].tomadores.findIndex(t => t.id === tomadorId);
+                const tomIndex = clients[clientIndex].tomadores.findIndex(t => t.id === tomId);
                 if (tomIndex !== -1) {
                     clients[clientIndex].tomadores[tomIndex].status = newStatus;
                     saveData();
@@ -1895,7 +1924,6 @@
             const id = document.getElementById('clientId').value;
             const municipioVal = document.getElementById('formMunicipio').value;
 
-            // CORREÇÃO: Cria a chave vazia APENAS se o município de fato não existir na mesa de operações
             if (municipioVal && prefeituraPassos[municipioVal] === undefined) {
                 prefeituraPassos[municipioVal] = "";
                 populatePrefeituraDropdowns();
